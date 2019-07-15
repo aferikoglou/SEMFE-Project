@@ -1,4 +1,5 @@
 const int interrupt_pin = 3;
+const int baud_rate = 9600;
 
 int number_of_samples = 10;
 
@@ -17,7 +18,7 @@ void setup() {
 
   TIMER1_init();
 
-  Serial.begin(9600);
+  Serial.begin(baud_rate);
   while (! Serial);
 }
 
@@ -127,4 +128,3 @@ void TIMER1_print_results() {
   Serial.println(" US");
   Serial.println("----------------------------------------");
 }
-
