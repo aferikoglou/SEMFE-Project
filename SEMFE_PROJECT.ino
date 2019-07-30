@@ -13,8 +13,23 @@ double period = 0;
 boolean interrupts_enabled = false;
 boolean measurement_finished = false;
 
+const int S0_pin = 4;
+const int S1_pin = 5;
+const int S2_pin = 6;
+const int OE_bar_pin = 22;
+
+int sensor_coord = -1;
+
+boolean full_mode_flag = false;
+
 void setup() {
   attachInterrupt(digitalPinToInterrupt(interrupt_pin), count_time_of_k_pulses, RISING);
+
+  /* Multiplexer Setup */
+  pinMode(OE_bar_pin, OUTPUT);
+  pinMode(S0_pin, OUTPUT);
+  pinMode(S1_pin, OUTPUT);
+  pinMode(S2_pin, OUTPUT);
 
   TIMER1_init();
 
@@ -24,16 +39,25 @@ void setup() {
 
 void loop() {
   if (Serial.available()) {
-    char input = Serial.read();
+    //char input = Serial.read();
+    String input = Serial.readString(); //Give r and a number from 0 to 7 (zero indexed)
 
-    if (input == 'r' && interrupts_enabled == false) {
+    if (input[0] == 'r' && interrupts_enabled == false) {
+      if (input[1] == 'f') {
+        full_mode_flag = true;
+        sensor_coord = 0;
+      } else
+        sensor_coord = input[2] - '0';
+
+      select_sensor();
+
       number_of_samples = 10;
-      
+
       pulse_counter = 0;
       measurement_counter = 0;
-      
+
       TIMER1_clear();
-      
+
       interrupts_enabled = true;
     }
     else if (input == 's')
@@ -46,23 +70,40 @@ void loop() {
     ticks = (overflows * 65536) + TCNT1;
     period = (ticks * 0.0625) / (number_of_samples - 1);
 
-    if (measurement_counter == 1){
-      
-      //MODIFY NUMBER OF SAMPLES FOR NEXT MEASUREMENT
-      if (period > 10000)
-        number_of_samples = 20;
-      else
-        number_of_samples = 100;
-      
+    if (measurement_counter == 1) {
+
+      number_of_samples = 100;
+
       pulse_counter = 0;
 
       TIMER1_clear();
 
       interrupts_enabled = true;
-    } 
-    else 
+    }
+    else {
       TIMER1_print_results();
 
+      if (full_mode_flag) {
+        sensor_coord++;
+
+        select_sensor();
+
+        number_of_samples = 10;
+
+        pulse_counter = 0;
+        measurement_counter = 0;
+
+        TIMER1_clear();
+
+        interrupts_enabled = true;
+
+        if (sensor_coord == 8) {
+          full_mode_flag = false;
+          interrupts_enabled = false;
+          sensor_coord = -1;
+        }
+      }
+    }
     measurement_finished = false;
   }
 }
@@ -85,6 +126,13 @@ void count_time_of_k_pulses() {
 
 ISR (TIMER1_OVF_vect) {
   overflows++;
+}
+
+void select_sensor() {
+  digitalWrite(OE_bar_pin, LOW);
+  digitalWrite(S2_pin, ((sensor_coord & 4) == 4) ? HIGH : LOW );
+  digitalWrite(S1_pin, ((sensor_coord & 2) == 2) ? HIGH : LOW );
+  digitalWrite(S0_pin, ((sensor_coord & 1) == 1) ? HIGH : LOW );
 }
 
 /*TIMER1 FUNCTIONS*/
@@ -111,9 +159,12 @@ void TIMER1_clear() {
 
 void TIMER1_print_results() {
   Serial.println("----------------------------------------");
+  Serial.print("SENSOR COORDINATE         = ");
+  Serial.println(sensor_coord);
+
   Serial.print("NUMBER OF PULSES MEASURED = ");
   Serial.println(pulse_counter);
-  
+
   Serial.print("TIMER1 VALUE              = ");
   Serial.println(TCNT1);
 
@@ -126,5 +177,11 @@ void TIMER1_print_results() {
   Serial.print("MEASURED PERIOD           = ");
   Serial.print(period);
   Serial.println(" US");
+
+  Serial.print("MEASURED RESISTANCE       = ");
+  double resistanse = ((period * 3.551020408 * 10) / 4) - 90.7;
+  Serial.print(resistanse);
+  Serial.println(" kΩ");
+
   Serial.println("----------------------------------------");
 }
