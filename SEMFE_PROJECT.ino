@@ -1,3 +1,4 @@
+/*CONSTANTS*/
 const int interrupt_pin = 3;
 
 const int S0_pin = 4;
@@ -9,6 +10,7 @@ const int num_of_sensors = 8;
 
 const int baud_rate = 9600;
 
+/*GLOBAL VARIABLES*/
 int number_of_samples = 10;
 
 int pulse_counter = 0;
