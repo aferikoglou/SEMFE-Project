@@ -1,14 +1,19 @@
 /*CONSTANTS*/
-const int interrupt_pin = 3;
+const int BAUD_RATE = 9600;
 
-const int S0_pin = 4;
-const int S1_pin = 5;
-const int S2_pin = 6;
-const int OE_bar_pin = 22;
+const int INTERRUPT_PIN = 3;
 
-const int num_of_sensors = 8;
+const int S0_PIN = 4;
+const int S1_PIN = 5;
+const int S2_PIN = 6;
+const int OE_BAR_PIN = 22;
 
-const int baud_rate = 9600;
+const int NUM_OF_SENSORS = 8;
+
+/*ANALOG CIRCUIT CONSTANTS*/
+const double CAPACITOR_VALUE = 90; //pF
+const double GAIN_VALUE = 3.5222672065;
+const double R_BIAS_VALUE = 93.4; //kΩ
 
 /*GLOBAL VARIABLES*/
 int number_of_samples = 10;
@@ -28,16 +33,16 @@ int sensor_coord;
 boolean full_mode = false;
 
 void setup() {
-  attachInterrupt(digitalPinToInterrupt(interrupt_pin), count_time_of_k_pulses, RISING);
+  attachInterrupt(digitalPinToInterrupt(INTERRUPT_PIN), count_time_of_k_pulses, RISING);
 
-  pinMode(OE_bar_pin, OUTPUT);
-  pinMode(S0_pin, OUTPUT);
-  pinMode(S1_pin, OUTPUT);
-  pinMode(S2_pin, OUTPUT);
+  pinMode(OE_BAR_PIN, OUTPUT);
+  pinMode(S0_PIN, OUTPUT);
+  pinMode(S1_PIN, OUTPUT);
+  pinMode(S2_PIN, OUTPUT);
 
   TIMER1_init();
 
-  Serial.begin(baud_rate);
+  Serial.begin(BAUD_RATE);
   while (! Serial);
 }
 
@@ -64,8 +69,6 @@ void loop() {
 
       interrupts_enabled = true;
     }
-    else if (input == 's')
-      TIMER1_stop();
   }
 
   if (measurement_finished) {
@@ -76,7 +79,7 @@ void loop() {
 
     if (measurement_counter == 1) {
       /*SET VARIABLES FOR MEASUREMENT*/
-      number_of_samples = 100;
+      number_of_samples = 500;
 
       pulse_counter = 0;
 
@@ -102,7 +105,7 @@ void loop() {
 
         interrupts_enabled = true;
 
-        if (sensor_coord == num_of_sensors) {
+        if (sensor_coord == NUM_OF_SENSORS) {
           full_mode = false;
           interrupts_enabled = false;
         }
@@ -137,10 +140,10 @@ ISR (TIMER1_OVF_vect) {
 /*FUNCTION FOR SENSOR SELECTION*/
 
 void select_sensor() {
-  digitalWrite(OE_bar_pin, LOW);
-  digitalWrite(S2_pin, ((sensor_coord & 4) == 4) ? HIGH : LOW );
-  digitalWrite(S1_pin, ((sensor_coord & 2) == 2) ? HIGH : LOW );
-  digitalWrite(S0_pin, ((sensor_coord & 1) == 1) ? HIGH : LOW );
+  digitalWrite(OE_BAR_PIN, LOW);
+  digitalWrite(S2_PIN, ((sensor_coord & 4) == 4) ? HIGH : LOW );
+  digitalWrite(S1_PIN, ((sensor_coord & 2) == 2) ? HIGH : LOW );
+  digitalWrite(S0_PIN, ((sensor_coord & 1) == 1) ? HIGH : LOW );
 }
 
 /*TIMER1 FUNCTIONS*/
@@ -188,7 +191,7 @@ void TIMER1_print_results() {
 
   Serial.print("MEASURED RESISTANCE       = ");
 
-  double resistanse = ((period * 3.551020408 * 10) / 4) - 90.7;
+  double resistanse = ((period * GAIN_VALUE * 1000) / (4 * CAPACITOR_VALUE)) - R_BIAS_VALUE; //kΩ
   Serial.print(resistanse);
 
   Serial.println(" kΩ");
