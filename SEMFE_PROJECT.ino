@@ -1,4 +1,4 @@
-/*CONSTANTS*/
+/***** CONSTANTS *****/
 const int BAUD_RATE = 9600;
 
 const int INTERRUPT_PIN = 3;
@@ -10,12 +10,12 @@ const int OE_BAR_PIN = 22;
 
 const int NUM_OF_SENSORS = 8;
 
-/*ANALOG CIRCUIT CONSTANTS*/
-const double CAPACITOR_VALUE = 90; //pF
+/***** ANALOG CIRCUIT CONSTANTS *****/
+const double CAPACITOR_VALUE = 400; //pF
 const double GAIN_VALUE = 3.5222672065;
-const double R_BIAS_VALUE = 93.4; //kΩ
+const double R_BIAS_VALUE = 98.7; //kΩ
 
-/*GLOBAL VARIABLES*/
+/***** GLOBAL VARIABLES *****/
 int number_of_samples = 10;
 
 int pulse_counter = 0;
@@ -48,7 +48,7 @@ void setup() {
 
 void loop() {
   if (Serial.available()) {
-    /*DEFINE MEASUREMENT MODE*/
+    /***** DEFINE MEASUREMENT MODE *****/
     String input = Serial.readString();
     if (input[0] == 'r' && interrupts_enabled == false) {
       if (input[1] == 'f') {
@@ -59,7 +59,7 @@ void loop() {
 
       select_sensor();
 
-      /*SET VARIABLES FOR DUMMY MEASUREMENT*/
+      /***** SET VARIABLES FOR DUMMY MEASUREMENT *****/
       number_of_samples = 10;
 
       pulse_counter = 0;
@@ -78,7 +78,7 @@ void loop() {
     period = (ticks * 0.0625) / (number_of_samples - 1);
 
     if (measurement_counter == 1) {
-      /*SET VARIABLES FOR MEASUREMENT*/
+      /***** SET VARIABLES FOR MEASUREMENT *****/
       number_of_samples = 500;
 
       pulse_counter = 0;
@@ -95,7 +95,7 @@ void loop() {
 
         select_sensor();
 
-        /*SET VARIABLES FOR DUMMY MEASUREMENT*/
+        /***** SET VARIABLES FOR DUMMY MEASUREMENT *****/
         number_of_samples = 10;
 
         pulse_counter = 0;
@@ -115,7 +115,7 @@ void loop() {
   }
 }
 
-/*INTERRUPT ROUTINES*/
+/***** INTERRUPT ROUTINES *****/
 
 void count_time_of_k_pulses() {
   if (interrupts_enabled) {
@@ -137,7 +137,7 @@ ISR (TIMER1_OVF_vect) {
   overflows++;
 }
 
-/*FUNCTION FOR SENSOR SELECTION*/
+/***** FUNCTION FOR SENSOR SELECTION *****/
 
 void select_sensor() {
   digitalWrite(OE_BAR_PIN, LOW);
@@ -146,7 +146,7 @@ void select_sensor() {
   digitalWrite(S0_PIN, ((sensor_coord & 1) == 1) ? HIGH : LOW );
 }
 
-/*TIMER1 FUNCTIONS*/
+/***** TIMER1 FUNCTIONS *****/
 
 void TIMER1_init() {
   TCCR1A  = 0;
